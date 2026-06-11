@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Zero-Trust PDF Tiler</title>
+    <!-- CSP: block all outbound JS network calls — no data can leave this page -->
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'none'; object-src 'none'; base-uri 'none';">
+    <!-- pdf-lib is bundled locally — zero CDN calls, works fully offline -->
+    <script src="pdf-lib.min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            max-width: 500px; 
+            margin: 20px auto; 
+            padding: 15px; 
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+        .card { 
+            background: white; 
+            border: 1px solid #e0e0e0; 
+            padding: 24px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        }
+        h2 {
+            margin-top: 0;
+            color: #222;
+            text-align: center;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
+        input[type="file"], select, button { 
+            width: 100%; 
+            padding: 14px; 
+            margin-top: 5px; 
+            box-sizing: border-box; 
+            border-radius: 8px; 
+            border: 1px solid #ccc; 
+            font-size: 16px; 
+            background-color: #fff;
+        }
+        input[type="file"] {
+            background-color: #fafafa;
+            cursor: pointer;
+        }
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            accent-color: #007bff;
+        }
+        .range-value {
+            font-weight: bold;
+            min-width: 45px;
+            text-align: right;
+            color: #555;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+            color: #333;
+        }
+        .checkbox-container input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #007bff;
+        }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 15px; 
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        button:active { background-color: #004085; }
+        button:disabled { background-color: #e0e0e0; color: #888; cursor: not-allowed; }
+        .status { margin-top: 20px; font-weight: bold; text-align: center; font-size: 14px; }
+        .secure-badge { 
+            display: block; 
+            background-color: #e6f4ea; 
+            color: #137333; 
+            padding: 8px; 
+            border-radius: 6px; 
+            font-size: 0.85em; 
+            margin-bottom: 20px; 
+            text-align: center;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Local PDF Grid Tiler</h2>
+    <div class="secure-badge">🔒 100% Local Processing — No Server Uploads</div>
+    
+    <div class="form-group">
+        <label for="pdfFile">Select PDF File:</label>
+        <input type="file" id="pdfFile" accept="application/pdf">
+    </div>
+
+    <div class="form-group">
+        <label for="gridSize">Grid Layout (Copies per Page):</label>
+        <select id="gridSize">
+            <option value="2">2-Up (1 row × 2 cols)</option>
+            <option value="4" selected>4-Up (2 rows × 2 cols)</option>
+            <option value="9">9-Up (3 rows × 3 cols)</option>
+            <option value="16">16-Up (4 rows × 4 cols)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="marginSize">Cell Inner Margin:</label>
+        <div class="range-container">
+            <input type="range" id="marginSize" min="0" max="40" value="10">
+            <span id="marginVal" class="range-value">10 px</span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="checkbox-container">
+            <input type="checkbox" id="toggleBorder" checked>
+            Draw borders around grid cells
+        </label>
+    </div>
+
+    <button id="processBtn" disabled>Tile PDF & Download</button>
+    <div id="status" class="status"></div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('pdfFile');
+    const gridSelect = document.getElementById('gridSize');
+    const marginInput = document.getElementById('marginSize');
+    const marginVal = document.getElementById('marginVal');
+    const borderCheckbox = document.getElementById('toggleBorder');
+    const processBtn = document.getElementById('processBtn');
+    const statusDiv = document.getElementById('status');
+
+    marginInput.addEventListener('input', () => {
+        marginVal.textContent = `${marginInput.value} px`;
+    });
+
+    fileInput.addEventListener('change', () => {
+        processBtn.disabled = !fileInput.files.length;
+        statusDiv.style.color = "black";
+        statusDiv.textContent = fileInput.files.length ? "File loaded locally." : "";
+    });
+
+    processBtn.addEventListener('click', async () => {
+        const files = fileInput.files;
+        if (!files.length) return;
+        const file = files[0];
+
+        try {
+            processBtn.disabled = true;
+            statusDiv.style.color = "black";
+            statusDiv.textContent = "Processing PDF locally...";
+
+            const fileArrayBuffer = await file.arrayBuffer();
+            const srcPdf = await PDFLib.PDFDocument.load(fileArrayBuffer);
+            const tilerPdf = await PDFLib.PDFDocument.create();
+
+            const n = parseInt(gridSelect.value, 10);
+            const currentMargin = parseInt(marginInput.value, 10);
+            const drawBorder = borderCheckbox.checked;
+            
+            const cols = Math.ceil(Math.sqrt(n)); 
+            const rows = cols; 
+
+            const targetWidth = 612;  
+            const targetHeight = 792; 
+
+            const cellWidth = targetWidth / (n === 2 ? 2 : cols);
+            const cellHeight = targetHeight / (n === 2 ? 1 : rows);
+
+            const [srcPage] = await tilerPdf.embedPdf(srcPdf);
+            const { width: origWidth, height: origHeight } = srcPage;
+
+            const usableCellWidth = cellWidth - (currentMargin * 2);
+            const usableCellHeight = cellHeight - (currentMargin * 2);
+
+            const scale = Math.min(usableCellWidth / origWidth, usableCellHeight / origHeight);
+            const scaledWidth = origWidth * scale;
+            const scaledHeight = origHeight * scale;
+
+            const newPage = tilerPdf.addPage([targetWidth, targetHeight]);
+
+            let count = 0;
+            const loopRows = n === 2 ? 1 : rows;
+            const loopCols = n === 2 ? 2 : cols;
+
+            const { rgb } = PDFLib;
+
+            for (let r = 0; r < loopRows; r++) {
+                for (let c = 0; c < loopCols; c++) {
+                    if (count >= n) break;
+
+                    const cellX = c * cellWidth;
+                    const cellY = targetHeight - ((r + 1) * cellHeight);
+
+                    if (drawBorder) {
+                        newPage.drawRectangle({
+                            x: cellX,
+                            y: cellY,
+                            width: cellWidth,
+                            height: cellHeight,
+                            borderColor: rgb(0.75, 0.75, 0.75),
+                            borderWidth: 0.75,
+                            opacity: 0.8
+                        });
+                    }
+
+                    const x = cellX + currentMargin + (usableCellWidth - scaledWidth) / 2;
+                    const y = cellY + currentMargin + (usableCellHeight - scaledHeight) / 2;
+
+                    newPage.drawPage(srcPage, {
+                        x: x,
+                        y: y,
+                        width: scaledWidth,
+                        height: scaledHeight,
+                    });
+                    
+                    count++;
+                }
+            }
+
+            const pdfBytes = await tilerPdf.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            const blobUrl = URL.createObjectURL(blob);
+
+            link.href = blobUrl;
+            link.download = `tiled-${n}up-${file.name}`;
+            link.click();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(blobUrl);
+            }, 100); 
+
+            statusDiv.style.color = "green";
+            statusDiv.textContent = "Done! Saved to your downloads.";
+        } catch (error) {
+            console.error(error);
+            statusDiv.style.color = "red";
+            statusDiv.textContent = "Error processing file. Ensure it is a valid PDF.";
+        } finally {
+            processBtn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>

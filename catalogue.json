@@ -1,0 +1,11 @@
+{
+  "id": "pdfTiles",
+  "title": "PdfTiles",
+  "oneLiner": "tile a pdf for flyers",
+  "demoUrl": "https://kylemath.github.io/pdfTiles",
+  "screenshot": "https://raw.githubusercontent.com/kylemath/pdfTiles/main/screenshot.png",
+  "kind": "project",
+  "categories": ["pdf", "print", "web"],
+  "tags": ["pdf", "print", "web"],
+  "status": "published"
+}
