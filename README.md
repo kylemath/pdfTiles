@@ -1,25 +1,43 @@
-# Local PDF Grid Tiler
+# Local Grid Tiler
 
 🚀 **[Live Demo](https://kylemath.github.io/pdfTiles)** 🚀
 
-A single-file browser tool that tiles one page of a PDF into a 2-, 4-, 9-, or 16-up grid layout and downloads the result — entirely on your device, with no server involved at any step.
+A single-file browser tool that tiles a PDF or image into any rows × columns grid layout and downloads the result as a PDF — entirely on your device, with no server involved at any step.
 
-![PDF Grid Tiler UI](screenshot.png)
+![Grid Tiler UI](screenshot.png)
 
 ---
 
 ## What it does
 
-Open `index.html` in any modern browser. Select a PDF, choose a grid layout (e.g. 4-Up prints four copies of the page on one sheet), adjust cell margins, toggle borders, and click **Tile PDF & Download**. The tiled PDF lands in your downloads folder in seconds.
+Open `index.html` in any modern browser. Select a PDF or image file, set the number of rows and columns, adjust cell margins, toggle borders, choose orientation, and click **Tile & Download**. The tiled PDF lands in your downloads folder in seconds.
 
-**Supported layouts**
+### Input formats
 
-| Option | Arrangement |
-|--------|-------------|
-| 2-Up   | 1 row × 2 columns |
-| 4-Up   | 2 rows × 2 columns |
-| 9-Up   | 3 rows × 3 columns |
-| 16-Up  | 4 rows × 4 columns |
+| Type | Formats |
+|------|---------|
+| PDF | `.pdf` — first page is tiled |
+| Images | `.jpg`, `.png`, `.gif`, `.webp`, `.bmp`, `.tiff` |
+
+JPEG files are embedded directly. All other image formats are converted to PNG in-browser before embedding.
+
+### Grid layout
+
+Instead of fixed presets, you set **rows** and **columns** independently — any value from 1 to 10 each, up to 100 copies per page. The default is 2 rows × 2 columns (4 copies). A live copy count updates as you type.
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Rows | 2 | Number of grid rows (1–10) |
+| Cols | 2 | Number of grid columns (1–10) |
+| Cell inner margin | 10 px | Padding inside each grid cell |
+| Draw borders | On | Draws a light gray border around each cell |
+| Landscape output | Off | Rotates the output page to horizontal (792 × 612 pt) |
+
+### Live preview
+
+A small canvas preview appears as soon as a file is loaded and updates instantly whenever any setting changes. It shows the actual image content for image inputs and a document placeholder for PDFs.
 
 ---
 
@@ -30,7 +48,7 @@ This tool is designed so that your documents never leave your machine under any 
 ### How processing works
 
 1. The browser reads the file you select using the standard [File API](https://developer.mozilla.org/en-US/docs/Web/API/File_API) — the bytes go directly into JavaScript memory, not to any server.
-2. [pdf-lib](https://pdf-lib.js.org/) (bundled locally, see below) tiles the page entirely in-process.
+2. [pdf-lib](https://pdf-lib.js.org/) (bundled locally, see below) tiles the content entirely in-process. For non-JPEG images, an off-screen `<canvas>` handles the format conversion before embedding.
 3. The finished PDF is handed back to you via a `blob:` URL and a simulated download link — a browser-native mechanism that opens no network socket.
 
 At no point does the tool make an upload request, POST form data, or call any external API with your file.
@@ -50,7 +68,7 @@ The PDF processing library (`pdf-lib.min.js`, v1.17.1) is included directly in t
 > Previously the library was loaded from unpkg.com. Before removing that dependency, a Subresource Integrity (SRI) hash was verified (`sha384-weMABwrltA6...`) to confirm the local copy is byte-for-byte identical to the published package.
 
 **Blob URL cleanup**
-After the download is triggered, `URL.revokeObjectURL()` is called to release the in-memory blob and prevent memory leaks.
+After the download is triggered, `URL.revokeObjectURL()` is called to release the in-memory blob and prevent memory leaks. Preview image blob URLs are also revoked immediately after the image loads.
 
 **No analytics or telemetry**
 There are no third-party scripts, tracking pixels, analytics SDKs, or remote logging of any kind.
