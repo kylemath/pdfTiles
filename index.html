@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Zero-Trust PDF Tiler</title>
+    <title>Local Zero-Trust Grid Tiler</title>
     <!-- CSP: block all outbound JS network calls — no data can leave this page -->
     <meta http-equiv="Content-Security-Policy" content="connect-src 'none'; object-src 'none'; base-uri 'none';">
     <!-- pdf-lib is bundled locally — zero CDN calls, works fully offline -->
@@ -103,27 +103,80 @@
             text-align: center;
             font-weight: 500;
         }
+
+        /* Grid row/col inputs */
+        .grid-input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+        .grid-input-row input[type="number"] {
+            width: 66px;
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        .grid-x {
+            color: #666;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .grid-summary {
+            color: #999;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        /* Live preview */
+        .preview-section {
+            display: none;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .preview-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        #previewCanvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            background: #fff;
+            max-width: 100%;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Local PDF Grid Tiler</h2>
+    <h2>Local Grid Tiler</h2>
     <div class="secure-badge">🔒 100% Local Processing — No Server Uploads</div>
     
     <div class="form-group">
-        <label for="pdfFile">Select PDF File:</label>
-        <input type="file" id="pdfFile" accept="application/pdf">
+        <label for="fileInput">Select PDF or Image File:</label>
+        <input type="file" id="fileInput" accept="application/pdf,image/jpeg,image/png,image/gif,image/webp,image/bmp,image/tiff,image/*">
     </div>
 
     <div class="form-group">
-        <label for="gridSize">Grid Layout (Copies per Page):</label>
-        <select id="gridSize">
-            <option value="2">2-Up (1 row × 2 cols)</option>
-            <option value="4" selected>4-Up (2 rows × 2 cols)</option>
-            <option value="9">9-Up (3 rows × 3 cols)</option>
-            <option value="16">16-Up (4 rows × 4 cols)</option>
-        </select>
+        <label>Grid Layout (Rows × Cols):</label>
+        <div class="grid-input-row">
+            <input type="number" id="gridRows" min="1" max="10" value="2" aria-label="Rows">
+            <span class="grid-x">rows ×</span>
+            <input type="number" id="gridCols" min="1" max="10" value="2" aria-label="Columns">
+            <span class="grid-x">cols</span>
+            <span class="grid-summary" id="gridSummary">= 4 copies</span>
+        </div>
     </div>
 
     <div class="form-group">
@@ -141,76 +194,258 @@
         </label>
     </div>
 
-    <button id="processBtn" disabled>Tile PDF & Download</button>
+    <div class="form-group">
+        <label class="checkbox-container">
+            <input type="checkbox" id="toggleLandscape">
+            Landscape output (horizontal page)
+        </label>
+    </div>
+
+    <div class="preview-section" id="previewSection">
+        <div class="preview-label">Live Preview</div>
+        <canvas id="previewCanvas" width="180" height="233"></canvas>
+    </div>
+
+    <button id="processBtn" disabled>Tile & Download</button>
     <div id="status" class="status"></div>
 </div>
 
 <script>
-    const fileInput = document.getElementById('pdfFile');
-    const gridSelect = document.getElementById('gridSize');
-    const marginInput = document.getElementById('marginSize');
-    const marginVal = document.getElementById('marginVal');
-    const borderCheckbox = document.getElementById('toggleBorder');
-    const processBtn = document.getElementById('processBtn');
-    const statusDiv = document.getElementById('status');
+    const fileInput    = document.getElementById('fileInput');
+    const rowsInput    = document.getElementById('gridRows');
+    const colsInput    = document.getElementById('gridCols');
+    const gridSummary  = document.getElementById('gridSummary');
+    const marginInput  = document.getElementById('marginSize');
+    const marginVal    = document.getElementById('marginVal');
+    const borderCheck    = document.getElementById('toggleBorder');
+    const landscapeCheck = document.getElementById('toggleLandscape');
+    const processBtn     = document.getElementById('processBtn');
+    const statusDiv    = document.getElementById('status');
+    const previewSection = document.getElementById('previewSection');
+    const previewCanvas  = document.getElementById('previewCanvas');
+    const previewCtx     = previewCanvas.getContext('2d');
+
+    let currentFile  = null;
+    let previewImage = null; // HTMLImageElement for image files
+
+    // ── Grid geometry helpers ──────────────────────────────────────────────────
+    function getGrid() {
+        const rows = Math.max(1, parseInt(rowsInput.value, 10) || 1);
+        const cols = Math.max(1, parseInt(colsInput.value, 10) || 1);
+        return { rows, cols };
+    }
+
+    function updateGridSummary() {
+        const { rows, cols } = getGrid();
+        const n = rows * cols;
+        gridSummary.textContent = `= ${n} cop${n === 1 ? 'y' : 'ies'}`;
+    }
+
+    // ── Page size helper ───────────────────────────────────────────────────────
+    function getPageSize() {
+        return landscapeCheck.checked
+            ? { w: 792, h: 612 }
+            : { w: 612, h: 792 };
+    }
+
+    // ── Live preview ───────────────────────────────────────────────────────────
+    function drawPreview() {
+        // Resize canvas to match output orientation (longest side = 233 px)
+        const { w: pageW, h: pageH } = getPageSize();
+        const LONG = 233;
+        const cw = pageW >= pageH ? LONG : Math.round(LONG * pageW / pageH);
+        const ch = pageH >= pageW ? LONG : Math.round(LONG * pageH / pageW);
+        previewCanvas.width  = cw;
+        previewCanvas.height = ch;
+
+        previewCtx.clearRect(0, 0, cw, ch);
+        previewCtx.fillStyle = '#fff';
+        previewCtx.fillRect(0, 0, cw, ch);
+
+        if (!currentFile) return;
+
+        const { cols, rows } = getGrid();
+        const margin = parseInt(marginInput.value, 10);
+        const border = borderCheck.checked;
+        const scale  = cw / pageW; // preview scale relative to PDF point space
+        const scaledMargin = margin * scale;
+        const cellW = cw / cols;
+        const cellH = ch / rows;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cx = c * cellW;
+                const cy = r * cellH;
+
+                if (previewImage) {
+                    const usableW = Math.max(1, cellW - scaledMargin * 2);
+                    const usableH = Math.max(1, cellH - scaledMargin * 2);
+                    const imgScale = Math.min(usableW / previewImage.naturalWidth, usableH / previewImage.naturalHeight);
+                    const imgW = previewImage.naturalWidth  * imgScale;
+                    const imgH = previewImage.naturalHeight * imgScale;
+                    previewCtx.drawImage(
+                        previewImage,
+                        cx + (cellW - imgW) / 2,
+                        cy + (cellH - imgH) / 2,
+                        imgW, imgH
+                    );
+                } else {
+                    // PDF placeholder — lines suggest document content
+                    const usableW = Math.max(1, cellW - scaledMargin * 2);
+                    const usableH = Math.max(1, cellH - scaledMargin * 2);
+                    const px = cx + (cellW - usableW) / 2;
+                    const py = cy + (cellH - usableH) / 2;
+
+                    previewCtx.fillStyle = '#f4f4f4';
+                    previewCtx.fillRect(px, py, usableW, usableH);
+
+                    previewCtx.strokeStyle = '#d0d0d0';
+                    previewCtx.lineWidth = 0.6;
+                    const lines = 6;
+                    for (let i = 1; i <= lines; i++) {
+                        const ly = py + (usableH / (lines + 1)) * i;
+                        const indent = usableW * 0.12;
+                        const lineLen = i === 1 ? usableW * 0.55 : usableW * (0.7 + Math.random() * 0.15);
+                        previewCtx.beginPath();
+                        previewCtx.moveTo(px + indent, ly);
+                        previewCtx.lineTo(px + Math.min(lineLen, usableW - indent), ly);
+                        previewCtx.stroke();
+                    }
+                }
+
+                if (border) {
+                    previewCtx.strokeStyle = 'rgba(175,175,175,0.85)';
+                    previewCtx.lineWidth = 0.75;
+                    previewCtx.strokeRect(cx, cy, cellW, cellH);
+                }
+            }
+        }
+    }
+
+    // ── Settings change listeners → redraw preview ─────────────────────────────
+    rowsInput.addEventListener('input', () => { updateGridSummary(); drawPreview(); });
+    colsInput.addEventListener('input', () => { updateGridSummary(); drawPreview(); });
 
     marginInput.addEventListener('input', () => {
         marginVal.textContent = `${marginInput.value} px`;
+        drawPreview();
     });
 
+    borderCheck.addEventListener('change', drawPreview);
+    landscapeCheck.addEventListener('change', drawPreview);
+
+    // ── File selection ─────────────────────────────────────────────────────────
     fileInput.addEventListener('change', () => {
-        processBtn.disabled = !fileInput.files.length;
-        statusDiv.style.color = "black";
-        statusDiv.textContent = fileInput.files.length ? "File loaded locally." : "";
+        const file = fileInput.files[0] || null;
+        currentFile  = file;
+        previewImage = null;
+
+        if (!file) {
+            processBtn.disabled = true;
+            processBtn.textContent = 'Tile & Download';
+            statusDiv.textContent  = '';
+            previewSection.style.display = 'none';
+            return;
+        }
+
+        processBtn.disabled = false;
+        processBtn.textContent = file.type === 'application/pdf' ? 'Tile PDF & Download' : 'Tile Image & Download';
+        statusDiv.style.color  = 'black';
+        statusDiv.textContent  = 'File loaded locally.';
+        previewSection.style.display = 'block';
+
+        if (file.type.startsWith('image/')) {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                previewImage = img;
+                URL.revokeObjectURL(url);
+                drawPreview();
+            };
+            img.onerror = () => URL.revokeObjectURL(url);
+            img.src = url;
+        } else {
+            drawPreview();
+        }
     });
 
+    // ── Image → PNG ArrayBuffer converter (for non-JPEG images) ───────────────
+    function convertToPng(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width  = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
+                canvas.toBlob(blob => {
+                    if (!blob) { reject(new Error('toBlob failed')); return; }
+                    blob.arrayBuffer().then(resolve).catch(reject);
+                }, 'image/png');
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+            img.src = url;
+        });
+    }
+
+    // ── Main tiling logic ──────────────────────────────────────────────────────
     processBtn.addEventListener('click', async () => {
-        const files = fileInput.files;
-        if (!files.length) return;
-        const file = files[0];
+        if (!currentFile) return;
 
         try {
             processBtn.disabled = true;
-            statusDiv.style.color = "black";
-            statusDiv.textContent = "Processing PDF locally...";
+            const isPdf = currentFile.type === 'application/pdf';
+            statusDiv.style.color = 'black';
+            statusDiv.textContent = isPdf ? 'Processing PDF locally…' : 'Processing image locally…';
 
-            const fileArrayBuffer = await file.arrayBuffer();
-            const srcPdf = await PDFLib.PDFDocument.load(fileArrayBuffer);
             const tilerPdf = await PDFLib.PDFDocument.create();
 
-            const n = parseInt(gridSelect.value, 10);
             const currentMargin = parseInt(marginInput.value, 10);
-            const drawBorder = borderCheckbox.checked;
-            
-            const cols = Math.ceil(Math.sqrt(n)); 
-            const rows = cols; 
+            const drawBorder    = borderCheck.checked;
 
-            const targetWidth = 612;  
-            const targetHeight = 792; 
+            const { cols, rows } = getGrid();
+            const n = rows * cols;
 
-            const cellWidth = targetWidth / (n === 2 ? 2 : cols);
-            const cellHeight = targetHeight / (n === 2 ? 1 : rows);
+            const { w: targetWidth, h: targetHeight } = getPageSize();
+            const cellWidth    = targetWidth  / cols;
+            const cellHeight   = targetHeight / rows;
 
-            const [srcPage] = await tilerPdf.embedPdf(srcPdf);
-            const { width: origWidth, height: origHeight } = srcPage;
+            let origWidth, origHeight, drawCell;
 
-            const usableCellWidth = cellWidth - (currentMargin * 2);
-            const usableCellHeight = cellHeight - (currentMargin * 2);
+            if (isPdf) {
+                const buf    = await currentFile.arrayBuffer();
+                const srcPdf = await PDFLib.PDFDocument.load(buf);
+                const [srcPage] = await tilerPdf.embedPdf(srcPdf);
+                origWidth  = srcPage.width;
+                origHeight = srcPage.height;
+                drawCell = (page, x, y, w, h) => page.drawPage(srcPage, { x, y, width: w, height: h });
+            } else {
+                let embeddedImage;
+                const isJpeg = currentFile.type === 'image/jpeg' || currentFile.type === 'image/jpg';
+                if (isJpeg) {
+                    embeddedImage = await tilerPdf.embedJpg(await currentFile.arrayBuffer());
+                } else {
+                    embeddedImage = await tilerPdf.embedPng(await convertToPng(currentFile));
+                }
+                origWidth  = embeddedImage.width;
+                origHeight = embeddedImage.height;
+                drawCell = (page, x, y, w, h) => page.drawImage(embeddedImage, { x, y, width: w, height: h });
+            }
 
-            const scale = Math.min(usableCellWidth / origWidth, usableCellHeight / origHeight);
-            const scaledWidth = origWidth * scale;
+            const usableCellWidth  = cellWidth  - currentMargin * 2;
+            const usableCellHeight = cellHeight - currentMargin * 2;
+            const scale      = Math.min(usableCellWidth / origWidth, usableCellHeight / origHeight);
+            const scaledWidth  = origWidth  * scale;
             const scaledHeight = origHeight * scale;
 
-            const newPage = tilerPdf.addPage([targetWidth, targetHeight]);
-
+            const newPage  = tilerPdf.addPage([targetWidth, targetHeight]);
+            const { rgb }  = PDFLib;
             let count = 0;
-            const loopRows = n === 2 ? 1 : rows;
-            const loopCols = n === 2 ? 2 : cols;
 
-            const { rgb } = PDFLib;
-
-            for (let r = 0; r < loopRows; r++) {
-                for (let c = 0; c < loopCols; c++) {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
                     if (count >= n) break;
 
                     const cellX = c * cellWidth;
@@ -218,49 +453,38 @@
 
                     if (drawBorder) {
                         newPage.drawRectangle({
-                            x: cellX,
-                            y: cellY,
-                            width: cellWidth,
-                            height: cellHeight,
+                            x: cellX, y: cellY,
+                            width: cellWidth, height: cellHeight,
                             borderColor: rgb(0.75, 0.75, 0.75),
                             borderWidth: 0.75,
                             opacity: 0.8
                         });
                     }
 
-                    const x = cellX + currentMargin + (usableCellWidth - scaledWidth) / 2;
+                    const x = cellX + currentMargin + (usableCellWidth  - scaledWidth)  / 2;
                     const y = cellY + currentMargin + (usableCellHeight - scaledHeight) / 2;
-
-                    newPage.drawPage(srcPage, {
-                        x: x,
-                        y: y,
-                        width: scaledWidth,
-                        height: scaledHeight,
-                    });
-                    
+                    drawCell(newPage, x, y, scaledWidth, scaledHeight);
                     count++;
                 }
             }
 
             const pdfBytes = await tilerPdf.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            const blobUrl = URL.createObjectURL(blob);
+            const blob     = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link     = document.createElement('a');
+            const blobUrl  = URL.createObjectURL(blob);
+            const baseName = currentFile.name.replace(/\.[^.]+$/, '');
 
-            link.href = blobUrl;
-            link.download = `tiled-${n}up-${file.name}`;
+            link.href     = blobUrl;
+            link.download = `tiled-${rows}x${cols}-${baseName}.pdf`;
             link.click();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
 
-            setTimeout(() => {
-                URL.revokeObjectURL(blobUrl);
-            }, 100); 
-
-            statusDiv.style.color = "green";
-            statusDiv.textContent = "Done! Saved to your downloads.";
-        } catch (error) {
-            console.error(error);
-            statusDiv.style.color = "red";
-            statusDiv.textContent = "Error processing file. Ensure it is a valid PDF.";
+            statusDiv.style.color = 'green';
+            statusDiv.textContent = 'Done! Saved to your downloads.';
+        } catch (err) {
+            console.error(err);
+            statusDiv.style.color = 'red';
+            statusDiv.textContent = 'Error processing file. Ensure it is a valid PDF or supported image.';
         } finally {
             processBtn.disabled = false;
         }
