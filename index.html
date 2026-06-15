@@ -3,46 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Zero-Trust Grid Tiler</title>
+    <title>LeHaLek</title>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
     <!-- CSP: block all outbound JS network calls — no data can leave this page -->
-    <meta http-equiv="Content-Security-Policy" content="connect-src 'none'; object-src 'none'; base-uri 'none';">
+    <meta http-equiv="Content-Security-Policy" content="connect-src http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; object-src 'none'; base-uri 'none';">
     <!-- pdf-lib is bundled locally — zero CDN calls, works fully offline -->
     <script src="pdf-lib.min.js"></script>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            max-width: 500px; 
-            margin: 20px auto; 
-            padding: 15px; 
-            background-color: #f8f9fa;
+        /* ── Colour tokens ──────────────────────────────────────── */
+        :root {
+            --bg:             #f8f9fa;
+            --card:           #ffffff;
+            --card-border:    #e0e0e0;
+            --card-shadow:    rgba(0,0,0,0.05);
+            --text:           #333333;
+            --text-muted:     #555555;
+            --text-light:     #888888;
+            --text-xlight:    #aaaaaa;
+            --label:          #333333;
+            --input-bg:       #ffffff;
+            --input-bg-file:  #fafafa;
+            --input-border:   #cccccc;
+            --range-track:    #dddddd;
+            --badge-bg:       #e6f4ea;
+            --badge-text:     #137333;
+            --canvas-border:  #dddddd;
+            --canvas-shadow:  rgba(0,0,0,0.07);
+            --btn-dis-bg:     #e0e0e0;
+            --btn-dis-text:   #888888;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg:             #111827;
+                --card:           #1f2937;
+                --card-border:    #374151;
+                --card-shadow:    rgba(0,0,0,0.4);
+                --text:           #f3f4f6;
+                --text-muted:     #d1d5db;
+                --text-light:     #9ca3af;
+                --text-xlight:    #6b7280;
+                --label:          #e5e7eb;
+                --input-bg:       #374151;
+                --input-bg-file:  #2d3748;
+                --input-border:   #4b5563;
+                --range-track:    #4b5563;
+                --badge-bg:       #064e3b;
+                --badge-text:     #6ee7b7;
+                --canvas-border:  #4b5563;
+                --canvas-shadow:  rgba(0,0,0,0.35);
+                --btn-dis-bg:     #374151;
+                --btn-dis-text:   #6b7280;
+            }
+        }
+
+        /* ── Base ───────────────────────────────────────────────── */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: var(--bg);
+            color: var(--text);
             line-height: 1.6;
         }
-        .card { 
-            background: white; 
-            border: 1px solid #e0e0e0; 
-            padding: 24px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        .card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--card-shadow);
         }
-        h2 {
-            margin-top: 0;
-            color: #222;
+
+        /* ── Header / logo ──────────────────────────────────────── */
+        .app-header {
             text-align: center;
+            margin-bottom: 20px;
         }
+        .app-logo {
+            width: 110px;
+            height: auto;
+        }
+        .app-tagline {
+            margin: 8px 0 0;
+            font-size: 13px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        /* ── Form elements ──────────────────────────────────────── */
         .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
-        input[type="file"], select, button { 
-            width: 100%; 
-            padding: 14px; 
-            margin-top: 5px; 
-            box-sizing: border-box; 
-            border-radius: 8px; 
-            border: 1px solid #ccc; 
-            font-size: 16px; 
-            background-color: #fff;
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--label); }
+
+        input[type="file"], select, button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid var(--input-border);
+            font-size: 16px;
+            background-color: var(--input-bg);
+            color: var(--text);
         }
         input[type="file"] {
-            background-color: #fafafa;
+            background-color: var(--input-bg-file);
             cursor: pointer;
         }
         .range-container {
@@ -54,15 +118,16 @@
             flex-grow: 1;
             height: 8px;
             border-radius: 5px;
-            background: #ddd;
+            background: var(--range-track);
             outline: none;
             accent-color: #007bff;
+            border: none;
         }
         .range-value {
             font-weight: bold;
             min-width: 45px;
             text-align: right;
-            color: #555;
+            color: var(--text-muted);
         }
         .checkbox-container {
             display: flex;
@@ -71,7 +136,7 @@
             cursor: pointer;
             user-select: none;
             font-weight: 600;
-            color: #333;
+            color: var(--label);
         }
         .checkbox-container input {
             width: 20px;
@@ -79,79 +144,80 @@
             cursor: pointer;
             accent-color: #007bff;
         }
-        button { 
-            background-color: #007bff; 
-            color: white; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
-            margin-top: 15px; 
+
+        /* ── Button ─────────────────────────────────────────────── */
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
             transition: background 0.2s;
         }
-        button:hover { background-color: #0056b3; }
+        button:hover  { background-color: #0056b3; }
         button:active { background-color: #004085; }
-        button:disabled { background-color: #e0e0e0; color: #888; cursor: not-allowed; }
+        button:disabled { background-color: var(--btn-dis-bg); color: var(--btn-dis-text); cursor: not-allowed; }
+
+        /* ── Status / badge ─────────────────────────────────────── */
         .status { margin-top: 20px; font-weight: bold; text-align: center; font-size: 14px; }
-        .secure-badge { 
-            display: block; 
-            background-color: #e6f4ea; 
-            color: #137333; 
-            padding: 8px; 
-            border-radius: 6px; 
-            font-size: 0.85em; 
-            margin-bottom: 20px; 
+        .secure-badge {
+            display: block;
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            margin-bottom: 20px;
             text-align: center;
             font-weight: 500;
         }
 
-        /* Grid row/col inputs */
-        .grid-input-row {
+        /* ── Grid sliders ───────────────────────────────────────── */
+        .grid-slider-row {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 5px;
-            flex-wrap: wrap;
+            margin-top: 10px;
         }
-        .grid-input-row input[type="number"] {
-            width: 66px;
-            padding: 10px 6px;
-            text-align: center;
-            font-size: 20px;
+        .grid-axis-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 34px;
+        }
+        .grid-axis-val {
+            font-size: 17px;
             font-weight: bold;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            background: #fff;
-        }
-        .grid-x {
-            color: #666;
-            font-size: 15px;
-            font-weight: 500;
+            color: #007bff;
+            min-width: 16px;
+            text-align: center;
         }
         .grid-summary {
-            color: #999;
-            font-size: 13px;
-            white-space: nowrap;
+            font-size: 12px;
+            color: var(--text-xlight);
+            text-align: right;
+            margin-top: 4px;
         }
 
-        /* Live preview */
+        /* ── Live preview ───────────────────────────────────────── */
         .preview-section {
-            display: none;
+            display: block;
             margin-bottom: 20px;
             text-align: center;
         }
         .preview-label {
             font-size: 11px;
-            color: #999;
+            color: var(--text-xlight);
             text-transform: uppercase;
             letter-spacing: 0.07em;
             font-weight: 600;
             margin-bottom: 6px;
         }
         #previewCanvas {
-            border: 1px solid #ddd;
+            border: 1px solid var(--canvas-border);
             border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            box-shadow: 0 2px 8px var(--canvas-shadow);
             background: #fff;
             max-width: 100%;
         }
@@ -160,7 +226,10 @@
 <body>
 
 <div class="card">
-    <h2>Local Grid Tiler</h2>
+    <div class="app-header">
+        <img src="logo.svg" alt="LeHaLek" class="app-logo">
+        <p class="app-tagline">Share, divide &amp; distribute</p>
+    </div>
     <div class="secure-badge">🔒 100% Local Processing — No Server Uploads</div>
     
     <div class="form-group">
@@ -169,14 +238,22 @@
     </div>
 
     <div class="form-group">
-        <label>Grid Layout (Rows × Cols):</label>
-        <div class="grid-input-row">
-            <input type="number" id="gridRows" min="1" max="10" value="2" aria-label="Rows">
-            <span class="grid-x">rows ×</span>
-            <input type="number" id="gridCols" min="1" max="10" value="2" aria-label="Columns">
-            <span class="grid-x">cols</span>
-            <span class="grid-summary" id="gridSummary">= 4 copies</span>
+        <label>Grid Layout:</label>
+        <datalist id="gridTicks">
+            <option value="1"><option value="2"><option value="3">
+            <option value="4"><option value="5"><option value="6">
+        </datalist>
+        <div class="grid-slider-row">
+            <span class="grid-axis-label">Rows</span>
+            <span class="grid-axis-val" id="rowsVal">2</span>
+            <input type="range" id="gridRows" min="1" max="6" step="1" value="2" list="gridTicks">
         </div>
+        <div class="grid-slider-row">
+            <span class="grid-axis-label">Cols</span>
+            <span class="grid-axis-val" id="colsVal">2</span>
+            <input type="range" id="gridCols" min="1" max="6" step="1" value="2" list="gridTicks">
+        </div>
+        <div class="grid-summary" id="gridSummary">= 4 copies</div>
     </div>
 
     <div class="form-group">
@@ -214,6 +291,8 @@
     const fileInput    = document.getElementById('fileInput');
     const rowsInput    = document.getElementById('gridRows');
     const colsInput    = document.getElementById('gridCols');
+    const rowsVal      = document.getElementById('rowsVal');
+    const colsVal      = document.getElementById('colsVal');
     const gridSummary  = document.getElementById('gridSummary');
     const marginInput  = document.getElementById('marginSize');
     const marginVal    = document.getElementById('marginVal');
@@ -226,7 +305,15 @@
     const previewCtx     = previewCanvas.getContext('2d');
 
     let currentFile  = null;
-    let previewImage = null; // HTMLImageElement for image files
+    let previewImage = null; // HTMLImageElement for the user's loaded image file
+    let logoImage    = null; // default placeholder — shown before any file is loaded
+
+    // Preload logo so the preview canvas has something to show immediately
+    (function () {
+        const img = new Image();
+        img.onload = () => { logoImage = img; drawPreview(); };
+        img.src = 'logo.svg';
+    }());
 
     // ── Grid geometry helpers ──────────────────────────────────────────────────
     function getGrid() {
@@ -237,6 +324,8 @@
 
     function updateGridSummary() {
         const { rows, cols } = getGrid();
+        rowsVal.textContent = rows;
+        colsVal.textContent = cols;
         const n = rows * cols;
         gridSummary.textContent = `= ${n} cop${n === 1 ? 'y' : 'ies'}`;
     }
@@ -262,8 +351,6 @@
         previewCtx.fillStyle = '#fff';
         previewCtx.fillRect(0, 0, cw, ch);
 
-        if (!currentFile) return;
-
         const { cols, rows } = getGrid();
         const margin = parseInt(marginInput.value, 10);
         const border = borderCheck.checked;
@@ -272,19 +359,22 @@
         const cellW = cw / cols;
         const cellH = ch / rows;
 
+        // Source to draw in each cell: user image > logo placeholder > PDF lines
+        const sourceImage = previewImage ?? (currentFile === null ? logoImage : null);
+
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const cx = c * cellW;
                 const cy = r * cellH;
 
-                if (previewImage) {
+                if (sourceImage) {
                     const usableW = Math.max(1, cellW - scaledMargin * 2);
                     const usableH = Math.max(1, cellH - scaledMargin * 2);
-                    const imgScale = Math.min(usableW / previewImage.naturalWidth, usableH / previewImage.naturalHeight);
-                    const imgW = previewImage.naturalWidth  * imgScale;
-                    const imgH = previewImage.naturalHeight * imgScale;
+                    const imgScale = Math.min(usableW / sourceImage.naturalWidth, usableH / sourceImage.naturalHeight);
+                    const imgW = sourceImage.naturalWidth  * imgScale;
+                    const imgH = sourceImage.naturalHeight * imgScale;
                     previewCtx.drawImage(
-                        previewImage,
+                        sourceImage,
                         cx + (cellW - imgW) / 2,
                         cy + (cellH - imgH) / 2,
                         imgW, imgH
@@ -344,7 +434,7 @@
             processBtn.disabled = true;
             processBtn.textContent = 'Tile & Download';
             statusDiv.textContent  = '';
-            previewSection.style.display = 'none';
+            drawPreview();
             return;
         }
 
@@ -352,7 +442,6 @@
         processBtn.textContent = file.type === 'application/pdf' ? 'Tile PDF & Download' : 'Tile Image & Download';
         statusDiv.style.color  = 'black';
         statusDiv.textContent  = 'File loaded locally.';
-        previewSection.style.display = 'block';
 
         if (file.type.startsWith('image/')) {
             const img = new Image();
