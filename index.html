@@ -423,6 +423,57 @@
                 <input type="text" id="flyerLesson" placeholder="Auto-filled from the parasha — type to override">
                 <button class="btn-secondary" id="flyerLessonSuggest" type="button" style="margin-top:8px;">✨ Use suggested summary</button>
             </div>
+
+            <div class="form-group">
+                <label for="flyerShacharit">Shacharit (service start):</label>
+                <input type="text" id="flyerShacharit" placeholder="auto">
+                <div class="hint" id="shacharitHint">Suggested to leave room for the pre-Shema service before the latest Shema. Edit to your shul's time.</div>
+            </div>
+
+            <div class="field-row" style="margin-bottom:18px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="flyerCandleMode">Candle lighting:</label>
+                    <select id="flyerCandleMode">
+                        <option value="plag">Plag HaMincha — early Shabbat</option>
+                        <option value="minutes">Minutes before sunset</option>
+                    </select>
+                </div>
+                <div class="form-group" id="flyerCandleMinRow" style="margin-bottom:0;display:none;">
+                    <label for="flyerCandle">Minutes before sunset:</label>
+                    <input type="number" id="flyerCandle" step="1" value="18">
+                </div>
+            </div>
+
+            <div class="field-row" style="margin-bottom:18px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="flyerEndPrimary">Shabbat ends (main):</label>
+                    <select id="flyerEndPrimary">
+                        <option value="geonim8.5">3 stars / 8.5&deg; (Chabad)</option>
+                        <option value="baalhatanya">Alter Rebbe 6&deg;</option>
+                        <option value="72">Rabbeinu Tam (72 min)</option>
+                        <option value="50">50 minutes</option>
+                        <option value="42">42 minutes</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="flyerEndSecondary">Shabbat ends (second):</label>
+                    <select id="flyerEndSecondary">
+                        <option value="none">— none —</option>
+                        <option value="72">Rabbeinu Tam (72 min)</option>
+                        <option value="geonim8.5">3 stars / 8.5&deg; (Chabad)</option>
+                        <option value="baalhatanya">Alter Rebbe 6&deg;</option>
+                        <option value="50">50 minutes</option>
+                        <option value="42">42 minutes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="flyerMG30" checked>
+                    Mincha Gedola: at least 30 min after chatzos (short days)
+                </label>
+            </div>
         </div>
 
         <div class="preview-section">
@@ -476,41 +527,18 @@
                 <div class="form-group">
                     <label for="flyerTradition">Tradition / minhag:</label>
                     <select id="flyerTradition">
+                        <option value="chabad" selected>Chabad (Alter Rebbe / Baal HaTanya zmanim)</option>
                         <option value="orthodox">Orthodox (GRA zmanim)</option>
-                        <option value="chabad">Chabad (Baal HaTanya zmanim)</option>
                         <option value="custom">Custom</option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label for="flyerCandleMode">Candle lighting:</label>
-                    <select id="flyerCandleMode">
-                        <option value="plag">Plag HaMincha — early Shabbat</option>
-                        <option value="minutes">Minutes before sunset</option>
-                    </select>
-                    <div class="field-row" id="flyerCandleMinRow" style="margin-top:10px;display:none;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="flyerCandle">Minutes before sunset:</label>
-                            <input type="number" id="flyerCandle" step="1" value="18">
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="flyerHavdalah">Shabbat Ends (main time):</label>
-                    <select id="flyerHavdalah">
-                        <option value="72">72 minutes / Rabbeinu Tam</option>
-                        <option value="geonim8.5">3 stars / Geonim 8.5&deg;</option>
-                        <option value="50">50 minutes</option>
-                        <option value="42">42 minutes</option>
-                        <option value="baalhatanya">Baal HaTanya (6&deg;)</option>
-                    </select>
-                    <div class="hint">A secondary "Chabad" time (3 stars / 8.5&deg;, the Motzei-Shabbos lechumra) is also shown.</div>
+                    <div class="hint">Candle lighting, Shacharit and the Shabbat-end times are chosen at the top.</div>
                 </div>
                 <div class="form-group">
                     <label class="checkbox-container">
                         <input type="checkbox" id="flyerUseElev">
-                        Use elevation in calculations
+                        Use elevation for non-published zmanim
                     </label>
-                    <div class="hint">Off matches most Chabad luachs (sea-level).</div>
+                    <div class="hint">Published sunrise/sunset (hanetz/shkiah) always use sea level, per the Chabad.org definition.</div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="checkbox-container">
@@ -533,10 +561,6 @@
                     <label for="flyerSubtitle">Subtitle (optional):</label>
                     <input type="text" id="flyerSubtitle" placeholder="e.g. Chodesh Tammuz / Shabbat Mevorchim">
                     <div class="hint">Leave blank to auto-fill (special parasha, Mevorchim, or Hebrew month).</div>
-                </div>
-                <div class="form-group">
-                    <label for="flyerShacharit">Shacharit time (your shul):</label>
-                    <input type="text" id="flyerShacharit" value="9:00 AM">
                 </div>
                 <div class="form-group">
                     <label for="flyerBlessing">Closing blessing:</label>
@@ -562,8 +586,8 @@
                 <div class="form-group"><label for="ovSunrise">Sunrise:</label><input type="text" id="ovSunrise"></div>
                 <div class="form-group"><label for="ovLatestShema">Latest Shema:</label><input type="text" id="ovLatestShema"></div>
                 <div class="form-group"><label for="ovMincha">Mincha:</label><input type="text" id="ovMincha"></div>
-                <div class="form-group"><label for="ovEnds">Shabbat Ends:</label><input type="text" id="ovEnds"></div>
-                <div class="form-group" style="margin-bottom:0;"><label for="ovChabad">Chabad (ends):</label><input type="text" id="ovChabad"></div>
+                <div class="form-group"><label for="ovEnds">Shabbat Ends (main):</label><input type="text" id="ovEnds"></div>
+                <div class="form-group" style="margin-bottom:0;"><label for="ovChabad">Shabbat Ends (second):</label><input type="text" id="ovChabad"></div>
             </div>
         </details>
 
@@ -571,8 +595,9 @@
             <summary>Verify computed times</summary>
             <div class="opt-body">
                 <div class="verify-box" id="flyerVerify" style="display:none;">
-                    <h4>Computed times — verify against <a href="https://www.myzmanim.com/" target="_blank" rel="noopener">MyZmanim</a></h4>
+                    <h4>Computed times (with seconds) — verify against <a href="https://www.myzmanim.com/" target="_blank" rel="noopener">MyZmanim</a></h4>
                     <table id="flyerVerifyTable"></table>
+                    <ul id="flyerVerifyNotes" style="margin:12px 0 0;padding-left:18px;font-size:12px;line-height:1.5;color:#5b6b82;"></ul>
                 </div>
             </div>
         </details>
@@ -908,7 +933,10 @@
     const flyerCandleMode= document.getElementById('flyerCandleMode');
     const flyerCandleMinRow = document.getElementById('flyerCandleMinRow');
     const flyerCandle    = document.getElementById('flyerCandle');
-    const flyerHavdalah  = document.getElementById('flyerHavdalah');
+    const flyerEndPrimary  = document.getElementById('flyerEndPrimary');
+    const flyerEndSecondary= document.getElementById('flyerEndSecondary');
+    const flyerMG30      = document.getElementById('flyerMG30');
+    const shacharitHint  = document.getElementById('shacharitHint');
     const flyerUseElev   = document.getElementById('flyerUseElev');
     const flyerInIsrael  = document.getElementById('flyerInIsrael');
     const ovCandle       = document.getElementById('ovCandle');
@@ -929,6 +957,7 @@
     const fctx           = flyerCanvas.getContext('2d');
     const flyerVerify    = document.getElementById('flyerVerify');
     const flyerVerifyTbl = document.getElementById('flyerVerifyTable');
+    const flyerVerifyNotes = document.getElementById('flyerVerifyNotes');
     const flyerPngBtn    = document.getElementById('flyerPngBtn');
     const flyerPdfBtn    = document.getElementById('flyerPdfBtn');
     const flyerToTilerBtn= document.getElementById('flyerToTilerBtn');
@@ -1046,6 +1075,7 @@
     }
 
     let lastSuggestedLesson = '';
+    let lastShacharitSug = '';
 
     function initFlyer() {
         // Populate location preset dropdown
@@ -1083,6 +1113,11 @@
 
         applyTradition();
         renderFlyer();
+        // Pre-fill the editable Shacharit field with the computed suggestion
+        if (!flyerShacharit.value.trim() && lastShacharitSug && lastShacharitSug !== '—') {
+            flyerShacharit.value = lastShacharitSug;
+            renderFlyer();
+        }
 
         // Listeners
         flyerLocation.addEventListener('change', () => {
@@ -1093,10 +1128,11 @@
         flyerCandleMode.addEventListener('change', () => { updateCandleMode(); scheduleRender(); });
         updateCandleMode();
         [flyerLat, flyerLng, flyerElev, flyerTz, flyerCity, flyerDate, flyerCandle,
-         flyerHavdalah, flyerHeading, flyerSubtitle, flyerShacharit, flyerLesson,
+         flyerHeading, flyerSubtitle, flyerShacharit, flyerLesson,
          flyerBlessing, ovCandle, ovSayShema, ovSunrise, ovLatestShema, ovMincha,
          ovEnds, ovChabad].forEach(el => el.addEventListener('input', scheduleRender));
-        [flyerInIsrael, flyerBH, flyerUseElev].forEach(el => el.addEventListener('change', scheduleRender));
+        [flyerInIsrael, flyerBH, flyerUseElev, flyerEndPrimary, flyerEndSecondary,
+         flyerMG30].forEach(el => el.addEventListener('change', scheduleRender));
         flyerDate.addEventListener('change', scheduleRender);  // Safari fires only 'change' for date pickers
         flyerGeoBtn.addEventListener('click', useGps);
         flyerLessonSuggest.addEventListener('click', () => {
@@ -1148,6 +1184,8 @@
     function setFlyerStatus(msg, color) { flyerStatus.textContent = msg; flyerStatus.style.color = color || 'inherit'; }
 
     // ── Core computation ─────────────────────────────────────────────────────
+    // Legacy helper kept for compatibility (elevation-based). The flyer now uses
+    // endTimeOf() below, which is sea-level-consistent per the Chabad.org definition.
     function tzeisOf(cal, method) {
         const ss = cal.getSunset();
         switch (method) {
@@ -1158,6 +1196,33 @@
             case 'baalhatanya': return cal.getTzaisBaalHatanya();
             default:            return cal.getTzaisGeonim8Point5Degrees();
         }
+    }
+
+    // Motzaei-Shabbos / nightfall options. 42-min variant measured from sea-level shkiah.
+    function endTimeOf(cal, method) {
+        switch (method) {
+            case 'geonim8.5':   return cal.getTzaisGeonim8Point5Degrees();   // 8.5° (Chabad)
+            case 'baalhatanya': return cal.getTzaisBaalHatanya();            // 6° (Alter Rebbe weekday tzeis)
+            case '72':          return cal.getTzais72();                     // Rabbeinu Tam
+            case '50':          return cal.getTzais50();
+            case '42': { const ss = cal.getSeaLevelSunset(); return ss ? ss.plus({ minutes: 42 }) : null; }
+            default:            return cal.getTzaisGeonim8Point5Degrees();
+        }
+    }
+    const END_LABELS = { 'geonim8.5':'3 stars / 8.5\u00b0', 'baalhatanya':'Alter Rebbe 6\u00b0', '72':"Rabbeinu Tam (72 min)", '50':'50 minutes', '42':'42 minutes' };
+    const END_SHORT  = { 'geonim8.5':'3 stars', 'baalhatanya':'6\u00b0', '72':"R' Tam", '50':'50 min', '42':'42 min' };
+
+    // Round a zman to a whole minute toward the halachically stricter side:
+    //  'up'   = later  (for "earliest you may…" times: candle/plag, mincha gedola, tzeis, Shabbat ends, hanetz)
+    //  'down' = earlier (for "latest / must finish by…" times: sof zman Shema, shkiah/end of mincha)
+    function roundZman(z, dir) {
+        if (!z) return null;
+        const base = z.set({ second: 0, millisecond: 0 });
+        const hadFraction = (z.second + z.millisecond / 1000) > 0;
+        if (!hadFraction) return base;
+        if (dir === 'up')   return base.plus({ minutes: 1 });
+        if (dir === 'down') return base;
+        return (z.second >= 30) ? base.plus({ minutes: 1 }) : base; // nearest
     }
 
     function computeFlyerData() {
@@ -1177,21 +1242,28 @@
         const friDT = satDT.minus({ days: 1 });
         const inIsrael = flyerInIsrael.checked;
         const chabad = flyerTradition.value === 'chabad';
-        const method = flyerHavdalah.value;
         const useElev = flyerUseElev.checked;
+        const mg30 = flyerMG30.checked;
+        const candleMode = flyerCandleMode.value;
+        const candleMin  = parseInt(flyerCandle.value, 10) || 18;
+        const endPrimaryM   = flyerEndPrimary.value;
+        const endSecondaryM = flyerEndSecondary.value;
 
         const geo = new KZ.GeoLocation(city, lat, lng, elev, tz);
 
+        // setUseElevation only affects the non-published zmanim; hanetz/shkiah below
+        // are always read from the sea-level getters, per the Chabad.org definition.
         const friCal = new KZ.ComplexZmanimCalendar(geo);
         friCal.setUseElevation(useElev);
         friCal.setDate(friDT);
-        friCal.setCandleLightingOffset(parseInt(flyerCandle.value, 10) || 18);
+        friCal.setCandleLightingOffset(candleMin);
 
         const satCal = new KZ.ComplexZmanimCalendar(geo);
         satCal.setUseElevation(useElev);
         satCal.setDate(satDT);
 
-        const fmt = z => z ? z.setZone(tz).toFormat('h:mm a') : null;
+        const fmt  = z => z ? z.setZone(tz).toFormat('h:mm a') : null;
+        const fmtS = z => z ? z.setZone(tz).toFormat('h:mm:ss a') : '—';
         const pre = (p, z) => z ? (p ? p + ' ' : '') + fmt(z) : '—';
         // Apply a manual override (verbatim) if the user typed one, else use computed text
         const ov = (el, computed) => {
@@ -1200,21 +1272,50 @@
             return v || computed;
         };
 
-        // Candle lighting: Plag HaMincha (early Shabbat) or a set number of minutes before sunset
-        const candle = flyerCandleMode.value === 'plag'
-            ? (chabad ? friCal.getPlagHaminchaBaalHatanya() : friCal.getPlagHamincha())
-            : friCal.getCandleLighting();
+        // ── Published sunrise/sunset = Hanetz / Shkiah, sea level, 0.833° (both minhagim) ──
+        const sunrise = satCal.getSeaLevelSunrise();
+        const shkia   = satCal.getSeaLevelSunset();   // mincha is valid until shkiah
 
-        // Day-time zmanim follow the chosen tradition (GRA vs Baal HaTanya)
-        const sunrise = chabad ? satCal.getSunriseBaalHatanya()      : satCal.getSunrise();
+        // ── Candle lighting: Plag HaMincha (early Shabbat) or N minutes before sea-level shkiah ──
+        let candle;
+        if (candleMode === 'plag') {
+            candle = chabad ? friCal.getPlagHaminchaBaalHatanya() : friCal.getPlagHamincha();
+        } else {
+            const friShkia = friCal.getSeaLevelSunset();
+            candle = friShkia ? friShkia.minus({ minutes: candleMin }) : null;
+        }
+
+        // ── Day-time zmanim follow the chosen minhag (Alter Rebbe = from hanetz amiti 1.583°) ──
         const sofShma = chabad ? satCal.getSofZmanShmaBaalHatanya()  : satCal.getSofZmanShmaGRA();
-        const minchaG = chabad ? satCal.getMinchaGedolaBaalHatanya() : satCal.getMinchaGedola();
-        const shkia   = satCal.getSunset();                         // mincha is valid until shkia
+        const minchaG = chabad
+            ? (mg30 ? satCal.getMinchaGedolaBaalHatanyaGreaterThan30() : satCal.getMinchaGedolaBaalHatanya())
+            : (mg30 ? satCal.getMinchaGedolaGreaterThan30()           : satCal.getMinchaGedola());
         // Friday evening Shema = nightfall (Chabad 6° tzeis, else 3 stars / 8.5°)
         const friShema = chabad ? friCal.getTzaisBaalHatanya() : friCal.getTzaisGeonim8Point5Degrees();
-        const endsMainT   = tzeisOf(satCal, method);
-        // Secondary "Chabad" Motzei-Shabbos time: 8.5° (the documented lechumra), NOT the 6° weekday tzeis
-        const endsChabadT = satCal.getTzaisGeonim8Point5Degrees();
+
+        // ── Shabbat-ends pair ──
+        const endPrimaryT   = endTimeOf(satCal, endPrimaryM);
+        const endSecondaryT = endSecondaryM === 'none' ? null : endTimeOf(satCal, endSecondaryM);
+
+        // ── Rounding toward the stricter side, then format ──
+        const rCandle   = roundZman(candle,   candleMode === 'plag' ? 'up' : 'down');
+        const rSayShema = roundZman(friShema, 'up');
+        const rSunrise  = roundZman(sunrise,  'up');
+        const rLatest   = roundZman(sofShma,  'down');
+        const rMinchaG  = roundZman(minchaG,  'up');
+        const rShkia    = roundZman(shkia,    'down');
+        const rEnd1     = roundZman(endPrimaryT,   'up');
+        const rEnd2     = roundZman(endSecondaryT, 'up');
+
+        // ── Suggested Shacharit: round down to a half hour, leaving ~45 min for the
+        //    pre-Shema service so Shema is reached before the latest time. Editable. ──
+        let shacharitSug = '—';
+        if (sofShma) {
+            let sug = sofShma.minus({ minutes: 45 });
+            sug = sug.set({ minute: sug.minute < 30 ? 0 : 30, second: 0, millisecond: 0 });
+            shacharitSug = fmt(sug);
+        }
+        lastShacharitSug = shacharitSug;
 
         // Parasha + Hebrew date + holiday
         const jc = new KZ.JewishCalendar();
@@ -1251,13 +1352,16 @@
         const suggestedLesson = suggestedLessonFor(parshaEn, holidayEn);
         const lesson = flyerLesson.value.trim() || suggestedLesson;
 
-        const candleStr  = ov(ovCandle,      pre('After', candle));
-        const sayShema   = ov(ovSayShema,    pre('After', friShema));
-        const sunriseStr = ov(ovSunrise,     pre('', sunrise));
-        const latestStr  = ov(ovLatestShema, pre('Before', sofShma));
-        const minchaStr  = ov(ovMincha,      'Between ' + (fmt(minchaG) || '—') + ' & ' + (fmt(shkia) || '—'));
-        const endsStr    = ov(ovEnds,        pre('', endsMainT));
-        const chabadStr  = ov(ovChabad,      pre('', endsChabadT));
+        const candleStr  = ov(ovCandle,      pre('After', rCandle));
+        const sayShema   = ov(ovSayShema,    pre('After', rSayShema));
+        const sunriseStr = ov(ovSunrise,     pre('', rSunrise));
+        const latestStr  = ov(ovLatestShema, pre('Before', rLatest));
+        const minchaStr  = ov(ovMincha,      'Between ' + (fmt(rMinchaG) || '—') + ' & ' + (fmt(rShkia) || '—'));
+        const endsStr    = ov(ovEnds,        pre('', rEnd1));
+        const secComputed = rEnd2 ? fmt(rEnd2) : '';
+        const secStr     = ov(ovChabad,      secComputed);
+        const secLabel   = END_SHORT[endSecondaryM] || 'Also';
+        const shacharitStr = ov(flyerShacharit, shacharitSug);
 
         const fridayRows = [
             { label: 'Mincha',          value: 'Before Candlelighting' },
@@ -1268,10 +1372,38 @@
         const shabbatRows = [
             { label: 'Sunrise',      value: sunriseStr },
             { label: 'Latest Shema', value: latestStr },
-            { label: 'Shacharit',    value: flyerShacharit.value.trim() || '—' },
+            { label: 'Shacharit',    value: shacharitStr },
             { label: 'Mincha',       value: minchaStr },
-            { label: 'Shabbat Ends', value: endsStr, chabad: chabadStr },
+            { label: 'Shabbat Ends', value: endsStr, second: secStr, secondLabel: secLabel },
         ];
+
+        // ── Verify-panel notes: be explicit about what's documented vs. uncertain ──
+        const notes = [];
+        notes.push('Hanetz (sunrise) and Shkiah (sunset) are sea-level, 0.833\u00b0, per Chabad.org. Hanetz/Shkiah Amitis (1.583\u00b0) are used only internally and are intentionally not printed.');
+        notes.push('Printed times are rounded to the whole minute toward the stricter side (earliest-times later, latest-times earlier). Chabad.org advises adjusting each zman by ~2 minutes.');
+        if (chabad) notes.push('Latest Shema and Mincha Gedola are measured from Hanetz Amiti (1.583\u00b0); Plag is 1.25 proportional hours before Shkiah Amitis (Alter Rebbe).');
+        if (endSecondaryM !== 'none' && rEnd1 && rEnd2 && +rEnd2 < +rEnd1)
+            notes.push('Note: at this latitude twilight is long, so the second time (' + END_LABELS[endSecondaryM] + ', ' + fmt(rEnd2) + ') falls EARLIER than the main time (' + END_LABELS[endPrimaryM] + ', ' + fmt(rEnd1) + '). Confirm which is intended.');
+        if (endPrimaryM === 'geonim8.5' && endSecondaryM === '72' && rEnd1 && rEnd2 && +rEnd1 > +rEnd2)
+            notes.push('Uncertainty: here 8.5\u00b0 (' + fmt(rEnd1) + ') is later than Rabbeinu Tam 72 min (' + fmt(rEnd2) + ') because bein hashemashos is very long — the example flyer\u2019s shorter "Chabad" time matches no standard depression angle. Confirm the community\u2019s motzaei-Shabbos time.');
+        [['Hanetz / Sunrise', sunrise], ['Latest Shema', sofShma], ['Mincha Gedola', minchaG],
+         ['Shkiah / Sunset', shkia], ['Say Shema / Tzeis', friShema], ['Candle Lighting', candle],
+         ['Shabbat Ends', endPrimaryT]].forEach(([k, v]) => { if (!v) notes.push('\u26a0 ' + k + ' has no value for this date (the sun never reaches the required depression at this latitude). Consult a rabbinic authority.'); });
+
+        const verifyItems = [
+            ['Hanetz / Sunrise (sea level 0.833\u00b0)', fmtS(sunrise)],
+            ['Hanetz Amiti (1.583\u00b0, internal)',     fmtS(satCal.getSunriseBaalHatanya())],
+            ['Latest Shema (' + (chabad ? 'Amiti + 3 sz' : 'GRA') + ')', fmtS(sofShma)],
+            ['Chatzos (midday)',                         fmtS(satCal.getChatzos())],
+            ['Mincha Gedola' + (mg30 ? ' (\u226530 min)' : ''), fmtS(minchaG)],
+            ['Shkiah / Sunset (sea level 0.833\u00b0)',  fmtS(shkia)],
+            ['Shkiah Amitis (1.583\u00b0, internal)',    fmtS(satCal.getSunsetBaalHatanya())],
+            ['Candle Lighting (' + (candleMode === 'plag' ? 'Plag' : candleMin + ' min before shkiah') + ')', fmtS(candle)],
+            ['Say Shema / Tzeis (' + (chabad ? '6\u00b0' : '8.5\u00b0') + ')', fmtS(friShema)],
+            ['Shabbat Ends — ' + END_LABELS[endPrimaryM], fmtS(endPrimaryT)],
+        ];
+        if (endSecondaryM !== 'none')
+            verifyItems.push(['Shabbat Ends — ' + END_LABELS[endSecondaryM], fmtS(endSecondaryT)]);
 
         return {
             bh: flyerBH.checked,
@@ -1281,16 +1413,8 @@
             fridayRows, shabbatRows,
             verify: {
                 parsha: parshaEn || holidayEn || '—',
-                items: [
-                    ['Candle Lighting (Fri)', pre('', candle)],
-                    ['Evening Shema (Fri)',   pre('', friShema)],
-                    ['Sunrise (Sat)',         pre('', sunrise)],
-                    ['Latest Shema (Sat)',    pre('', sofShma)],
-                    ['Mincha Gedola (Sat)',   pre('', minchaG)],
-                    ['Sunset / Shkia (Sat)',  pre('', shkia)],
-                    ['Shabbat Ends (' + method + ')', pre('', endsMainT)],
-                    ['Chabad ends (8.5\u00b0)',        pre('', endsChabadT)],
-                ],
+                items: verifyItems,
+                notes,
             },
         };
     }
@@ -1307,6 +1431,8 @@
         setFlyerStatus('', 'inherit');
         lastSuggestedLesson = data.suggestedLesson;
         flyerLessonSuggest.style.display = data.suggestedLesson ? 'block' : 'none';
+        if (shacharitHint) shacharitHint.textContent =
+            'Suggested ' + (lastShacharitSug || '—') + ' — leaves ~45 min for the pre-Shema service before the latest Shema. Edit to your shul\u2019s time.';
         if (optLocationVal) optLocationVal.textContent = data.city;
 
         const W = 1224, H = 1584;        // 2× US-Letter portrait
@@ -1383,12 +1509,12 @@
             ctx.fillText(label, M, y);
 
             ctx.textAlign = 'right';
-            if (opts.chabad) {
-                const chabadStr = 'Chabad: ' + opts.chabad;
+            if (opts.second) {
+                const secStr = (opts.secondLabel ? opts.secondLabel + ': ' : '') + opts.second;
                 ctx.font = '400 30px ' + SERIF;
                 ctx.fillStyle = '#5b6b82';
-                const cw = ctx.measureText(chabadStr).width;
-                ctx.fillText(chabadStr, RX, y);
+                const cw = ctx.measureText(secStr).width;
+                ctx.fillText(secStr, RX, y);
                 ctx.font = '700 36px ' + SERIF;
                 ctx.fillStyle = navy;
                 ctx.fillText(value, RX - cw - 28, y);
@@ -1405,7 +1531,7 @@
         y += 34;
 
         sectionTitle('SHABBAT DAY');
-        data.shabbatRows.forEach(r => row(r.label, r.value, { chabad: r.chabad }));
+        data.shabbatRows.forEach(r => row(r.label, r.value, { second: r.second, secondLabel: r.secondLabel }));
 
         // ── Lesson of the Parsha ─────────────────────────────────────────────
         if (data.lesson) {
@@ -1484,6 +1610,10 @@
             html += `<tr><td>${k}</td><td>${v}</td></tr>`;
         });
         flyerVerifyTbl.innerHTML = html;
+        if (flyerVerifyNotes) {
+            flyerVerifyNotes.innerHTML = (data.verify.notes || [])
+                .map(n => `<li>${n}</li>`).join('');
+        }
     }
 
     // ── Exports ────────────────────────────────────────────────────────────────
