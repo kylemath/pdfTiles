@@ -382,6 +382,14 @@
     </div>
 
     <div class="form-group">
+        <label for="cropAmount">Crop to Fill (removes empty borders):</label>
+        <div class="range-container">
+            <input type="range" id="cropAmount" min="0" max="100" value="0">
+            <span id="cropVal" class="range-value">0%</span>
+        </div>
+    </div>
+
+    <div class="form-group">
         <label class="checkbox-container">
             <input type="checkbox" id="toggleBorder" checked>
             Draw borders around grid cells
@@ -613,6 +621,8 @@
     const gridSummary  = document.getElementById('gridSummary');
     const marginInput  = document.getElementById('marginSize');
     const marginVal    = document.getElementById('marginVal');
+    const cropInput    = document.getElementById('cropAmount');
+    const cropVal      = document.getElementById('cropVal');
     const borderCheck    = document.getElementById('toggleBorder');
     const landscapeCheck = document.getElementById('toggleLandscape');
     const processBtn     = document.getElementById('processBtn');
@@ -654,6 +664,20 @@
             : { w: 612, h: 792 };
     }
 
+    // ── Crop helper ────────────────────────────────────────────────────────────
+    // cropFrac 0   → "contain" scale: whole image visible, may leave empty borders
+    // cropFrac 1   → "cover" scale: image fills the cell completely, edges cropped
+    // values in between interpolate, cropping progressively more of the outer edges
+    function getCropFraction() {
+        return parseInt(cropInput.value, 10) / 100;
+    }
+
+    function getCellScale(origW, origH, usableW, usableH, cropFrac) {
+        const containScale = Math.min(usableW / origW, usableH / origH);
+        const coverScale   = Math.max(usableW / origW, usableH / origH);
+        return containScale + cropFrac * (coverScale - containScale);
+    }
+
     // ── Live preview ───────────────────────────────────────────────────────────
     function drawPreview() {
         // Resize canvas to match output orientation (longest side = 233 px)
@@ -669,7 +693,8 @@
         previewCtx.fillRect(0, 0, cw, ch);
 
         const { cols, rows } = getGrid();
-        const margin = parseInt(marginInput.value, 10);
+        const margin   = parseInt(marginInput.value, 10);
+        const cropFrac = getCropFraction();
         const border = borderCheck.checked;
         const scale  = cw / pageW; // preview scale relative to PDF point space
         const scaledMargin = margin * scale;
@@ -687,15 +712,23 @@
                 if (sourceImage) {
                     const usableW = Math.max(1, cellW - scaledMargin * 2);
                     const usableH = Math.max(1, cellH - scaledMargin * 2);
-                    const imgScale = Math.min(usableW / sourceImage.naturalWidth, usableH / sourceImage.naturalHeight);
+                    const usableX = cx + (cellW - usableW) / 2;
+                    const usableY = cy + (cellH - usableH) / 2;
+                    const imgScale = getCellScale(sourceImage.naturalWidth, sourceImage.naturalHeight, usableW, usableH, cropFrac);
                     const imgW = sourceImage.naturalWidth  * imgScale;
                     const imgH = sourceImage.naturalHeight * imgScale;
+
+                    previewCtx.save();
+                    previewCtx.beginPath();
+                    previewCtx.rect(usableX, usableY, usableW, usableH);
+                    previewCtx.clip();
                     previewCtx.drawImage(
                         sourceImage,
                         cx + (cellW - imgW) / 2,
                         cy + (cellH - imgH) / 2,
                         imgW, imgH
                     );
+                    previewCtx.restore();
                 } else {
                     // PDF placeholder — lines suggest document content
                     const usableW = Math.max(1, cellW - scaledMargin * 2);
@@ -735,6 +768,11 @@
 
     marginInput.addEventListener('input', () => {
         marginVal.textContent = `${marginInput.value} px`;
+        drawPreview();
+    });
+
+    cropInput.addEventListener('input', () => {
+        cropVal.textContent = `${cropInput.value}%`;
         drawPreview();
     });
 
@@ -809,6 +847,7 @@
             const tilerPdf = await PDFLib.PDFDocument.create();
 
             const currentMargin = parseInt(marginInput.value, 10);
+            const cropFrac       = getCropFraction();
             const drawBorder    = borderCheck.checked;
 
             const { cols, rows } = getGrid();
@@ -842,12 +881,12 @@
 
             const usableCellWidth  = cellWidth  - currentMargin * 2;
             const usableCellHeight = cellHeight - currentMargin * 2;
-            const scale      = Math.min(usableCellWidth / origWidth, usableCellHeight / origHeight);
+            const scale      = getCellScale(origWidth, origHeight, usableCellWidth, usableCellHeight, cropFrac);
             const scaledWidth  = origWidth  * scale;
             const scaledHeight = origHeight * scale;
 
             const newPage  = tilerPdf.addPage([targetWidth, targetHeight]);
-            const { rgb }  = PDFLib;
+            const { rgb, pushGraphicsState, popGraphicsState, rectangle, clip, endPath } = PDFLib;
             let count = 0;
 
             for (let r = 0; r < rows; r++) {
@@ -867,9 +906,21 @@
                         });
                     }
 
-                    const x = cellX + currentMargin + (usableCellWidth  - scaledWidth)  / 2;
-                    const y = cellY + currentMargin + (usableCellHeight - scaledHeight) / 2;
+                    const usableX = cellX + currentMargin;
+                    const usableY = cellY + currentMargin;
+                    const x = usableX + (usableCellWidth  - scaledWidth)  / 2;
+                    const y = usableY + (usableCellHeight - scaledHeight) / 2;
+
+                    // Clip to the cell's usable area so a "cover" crop (cropFrac > 0)
+                    // never bleeds into the margin or neighboring cells.
+                    newPage.pushOperators(
+                        pushGraphicsState(),
+                        rectangle(usableX, usableY, usableCellWidth, usableCellHeight),
+                        clip(),
+                        endPath()
+                    );
                     drawCell(newPage, x, y, scaledWidth, scaledHeight);
+                    newPage.pushOperators(popGraphicsState());
                     count++;
                 }
             }
