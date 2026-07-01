@@ -1,7 +1,7 @@
 {
   "id": "pdfTiles",
   "title": "PdfTiles",
-  "oneLiner": "tile pdfs & build weekly Shabbat flyers, all on-device",
+  "oneLiner": "tile a pdf for flyers",
   "demoUrl": "https://kylemath.github.io/pdfTiles",
   "screenshot": "https://raw.githubusercontent.com/kylemath/pdfTiles/main/screenshot.png",
   "kind": "project",

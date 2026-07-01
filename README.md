@@ -2,10 +2,7 @@
 
 🚀 **[Live Demo](https://kylemath.github.io/pdfTiles)** 🚀
 
-A single-file browser tool with two tabs, both running **entirely on your device** with no server involved at any step:
-
-- **Tile** — tiles a PDF or image into any rows × columns grid layout and downloads the result as a PDF.
-- **Weekly Flyer** — builds a printable Shabbat flyer (parasha, candle lighting, Havdalah and full davening zmanim) for any location, then exports it as PNG/PDF or hands it straight to the Tile tab.
+A single-file browser tool that tiles a PDF or image into any rows × columns grid layout and downloads the result as a PDF — entirely on your device, with no server involved at any step.
 
 ![Grid Tiler UI](screenshot.png)
 
@@ -41,50 +38,6 @@ Instead of fixed presets, you set **rows** and **columns** independently — any
 ### Live preview
 
 A small canvas preview appears as soon as a file is loaded and updates instantly whenever any setting changes. It shows the actual image content for image inputs and a document placeholder for PDFs.
-
----
-
-## Weekly Flyer tab
-
-Create a print-ready weekly Shabbat flyer without any internet connection or API key. All halachic times and the Torah portion are calculated on-device by [KosherZmanim](https://github.com/BehindTheMath/KosherZmanim) (the JavaScript port of [KosherJava](https://kosherjava.com/)), which is bundled locally.
-
-### Inputs
-
-| Field | Description |
-|-------|-------------|
-| Location preset | A list of common cities, or **Custom** to enter your own coordinates |
-| Latitude / Longitude / Elevation | Used for the solar calculations; elevation affects sunrise/sunset |
-| Time zone | IANA zone (e.g. `America/Toronto`); autocompletes where the browser supports it |
-| 📍 Use my GPS location | Fills coordinates + time zone from the device (browser geolocation, no network) |
-| Shabbat date | Defaults to the upcoming Saturday; candle lighting is the Friday before |
-| Tradition / minhag | **Orthodox** (GRA zmanim) or **Chabad** (Baal HaTanya zmanim), or **Custom** |
-| Candle lighting | **Plag HaMincha** (early Shabbat) or a set number of minutes before sunset |
-| Shabbat Ends (main time) | 72 minutes / Rabbeinu Tam (default), 3 stars / Geonim 8.5°, 50 or 42 minutes, or Baal HaTanya (6°). A secondary **Chabad** time (8.5°, the Motzei-Shabbos *lechumra*) is always shown beside it |
-| Use elevation | Off by default (sea-level), matching most Chabad luachs; on uses the entered elevation |
-| Manual time overrides | A collapsible section with a box for every printed time (Candle Lighting, Say Shema, Sunrise, Latest Shema, Mincha, Shabbat Ends, Chabad) — leave blank to use the computed value, or type your shul's exact time verbatim |
-| Israel | One-day yom tov + Israeli parasha schedule |
-| Title override | Blank → auto-builds `Shabbat Parshat <name>` (or the holiday name) |
-| Subtitle | Blank → auto-fills special parasha, *Shabbat Mevorchim*, or the Hebrew month |
-| Shacharit time | Your shul's davening time (free text, default `9:00 AM`) |
-| Lesson of the Parsha | Auto-fills a one-line, Chabad-style summary for the week's parasha (distilled from Chabad.org's *Parshah in a Nutshell*); the **✨ Use suggested summary** button copies it into the box so you can edit it, or type your own |
-| Closing blessing | Default `Shabbat Shalom U'Mevorach!` |
-| Show B"H | Toggles the B"H mark in the top corner |
-
-### Layout & output
-
-The flyer follows a classic Chabad-style template — a navy header band (B"H, parasha title, subtitle, city/date) over two gold-underlined sections:
-
-- **Friday Evening** — Mincha (*Before Candlelighting*), Candle Lighting, Kabbalat Shabbat (*Following Candles*), Say Shema (nightfall).
-- **Shabbat Day** — Sunrise, Latest Shema, Shacharit, Mincha (*Mincha Gedola → Shkia*), and **Shabbat Ends** showing the main time **plus the Chabad time** (8.5° / 3 medium stars — the documented Motzei-Shabbos *lechumra*, per R' Feigelstock the 6° weekday tzeis should **not** be used for the end of Shabbos).
-
-A live **canvas preview** updates as you type. Then:
-
-- **Download PNG** / **Download PDF** save the flyer to disk.
-- **Send flyer to Tile tab →** loads the rendered flyer directly into the Tile tab so you can print multiple copies per page.
-- A **verification table** lists every computed time with a link to [MyZmanim](https://www.myzmanim.com/) so you can cross-check before printing.
-- Open the flyer directly with the `index.html#flyer` deep link.
-
-> Times are computed from a solar model and standard minhag options. Always confirm against your community's published times before relying on them.
 
 ---
 
@@ -152,10 +105,9 @@ Or just double-click `index.html` in Finder / File Explorer.
 ## Files
 
 ```
-index.html            — the entire application (single file, no build)
-pdf-lib.min.js        — pdf-lib v1.17.1 (bundled locally, no CDN dependency)
-kosher-zmanim.min.js  — KosherZmanim v0.9.0 (bundled locally, no CDN dependency)
-screenshot.png        — UI screenshot used in this README
+index.html       — the entire application (single file, no build)
+pdf-lib.min.js   — pdf-lib v1.17.1 (bundled locally, no CDN dependency)
+screenshot.png   — UI screenshot used in this README
 ```
 
 ---
@@ -165,6 +117,5 @@ screenshot.png        — UI screenshot used in this README
 | Library | Version | Source |
 |---------|---------|--------|
 | [pdf-lib](https://github.com/Hopding/pdf-lib) | 1.17.1 | Bundled locally (`pdf-lib.min.js`) |
-| [KosherZmanim](https://github.com/BehindTheMath/KosherZmanim) | 0.9.0 | Bundled locally (`kosher-zmanim.min.js`) |
 
 No npm, no bundler, no build toolchain needed.
